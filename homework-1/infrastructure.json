@@ -1,0 +1,44 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Simple infrasructure with one EC2 instance",
+    "Parameters": {
+        "AMIID": {
+            "Type": "String",
+            "Description": "Application and OS Image",
+            "Default": "ami-08e2d37b6a0129927"
+            
+        },
+        "Instance": {
+            "Type": "String",
+            "Description": "Instance type",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t1.mcro",
+                "t2.micro"
+            ]
+        }
+    },
+    "Resources": {
+        "EC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "AMIID"
+                },
+                "InstanceType": {
+                    "Ref": "Instance"
+                }
+            }
+        }
+    },
+    "Outputs" : {
+        "InstanceIP" : {
+          "Description" : "The IP address of the instance",
+          "Value" : {"Fn::GetAtt": ["EC2Instance", "PublicIp"]}
+        },
+        "InstanceDNS" : {
+          "Description" : "The DNS name of the instance",
+          "Value" : {"Fn::GetAtt": ["EC2Instance", "PublicDnsName"]}
+        }
+    }
+}
