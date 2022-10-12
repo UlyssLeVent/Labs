@@ -1,0 +1,114 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Autoscaling Group",
+    "Parameters": {
+        "AMIID": {
+            "Type": "String",
+            "Description": "Application and OS Image",
+            "Default": "ami-08e2d37b6a0129927"
+            
+        },
+        "lab2Instance": {
+            "Type": "String",
+            "Description": "Instance type",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t1.mcro",
+                "t2.micro"
+            ]
+        },
+        "lab2KeyPair": {
+            "Description": "The EC2 KeyPair",
+            "Type": "String",
+            "Default": "lab-key"
+        }
+    },
+    "Resources": {
+        "lab2SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "SSH & HTTP traffic",
+                "GroupName": "SSHHTTP",
+                "SecurityGroupIngress": [
+                    {
+                        "Description": "Allow inbound SSH",
+                        "CidrIp": "0.0.0.0/0",
+                        "IpProtocol": "tcp",
+                        "FromPort": 0,
+                        "ToPort": 22
+                    },
+                    {
+                        "Description": "Allow inbound HTTP",
+                        "CidrIp": "0.0.0.0/0",
+                        "IpProtocol": "tcp",
+                        "FromPort": 0,
+                        "ToPort": 80
+                    },
+                    {
+                        "Description": "Allow inbound HTTPS",
+                        "CidrIp": "0.0.0.0/0",
+                        "IpProtocol": "tcp",
+                        "FromPort": 0,
+                        "ToPort": 443
+                    }
+                ]
+            }
+        },
+        "lab2LaunchTemplate": {
+            "Type": "AWS::EC2::LaunchTemplate",
+            "Properties": {
+                "LaunchTemplateName": "lab2-launch-template",
+                "LaunchTemplateData": {
+                    "ImageId": {
+                        "Ref": "AMIID"
+                   },
+                    "InstanceType": {
+                        "Ref": "lab2Instance"
+                    },
+                    "KeyName": {
+                        "Ref": "lab2KeyPair"
+                    },
+                    "SecurityGroups": [
+                        {
+                            "Ref":"lab2SecurityGroup"
+                        }
+                    ],
+                    "UserData": {
+                        "Fn::Base64":{
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "#!/bin/bash\n",
+                                    "sudo amazon-linux-extras enable corretto8\n",
+                                    "sudo yum -y install java-1.8.0-amazon-corretto.x86_64\n"
+                                ]
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "lab2ASG" : {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "lab2LaunchTemplate"
+                    },
+                    "Version": {
+                        "Fn::GetAtt": [
+                            "lab2LaunchTemplate",
+                            "LatestVersionNumber"
+                        ]
+                    }
+                },
+                "AvailabilityZones": {
+                    "Fn::GetAZs": "us-west-2"
+                },
+                "MaxSize": "3",
+                "MinSize": "2",
+                "DesiredCapacity": "2"
+            }
+        }
+    }
+}
